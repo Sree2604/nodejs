@@ -96,7 +96,7 @@ app.post("/api/customers", async (req, res) => {
 const start = async () => {
   try {
     await mongoose.connect(CONNECTION);
-    app.listen(PORT, () => {
+    app.listen(() => {
       console.log("App listening on port " + PORT);
     });
   } catch (e) {
