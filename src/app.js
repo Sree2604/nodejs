@@ -22,81 +22,61 @@ if (!CONNECTION) {
   process.exit(1);
 }
 
-app.get("/api/customers", async (req, res) => {
+app.get("/:mail", async (req, res) => {
   try {
-    const result = await Customer.find();
-    res.json({ customers: result });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
+    const { mail } = req.params;
+    const user = await User.findOne({ mail });
 
-app.get("/api/customers/:id", async (req, res) => {
-  try {
-    const { id: customerId } = req.params;
-    const customer = await Customer.findById(customerId);
-    if (!customer) {
-      res.status(404).json({ error: "User not found" });
-    } else {
-      res.json({ customer });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
-  } catch (e) {
-    res.status(500).json({ error: "something went wrong" });
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).send({ message: "Internal Server Error" });
   }
 });
 
-app.put("/api/customers/:id", async (req, res) => {
+app.post("/users", async (req, res) => {
   try {
-    const customerId = req.params.id;
-    const customer = await Customer.findOneAndReplace(
-      { _id: customerId },
-      req.body,
-      { new: true }
-    );
-    res.json({ customer });
-  } catch (e) {
-    res.status(500).json({ error: "something went wrong" });
-  }
-});
+    const { name, mail, phone, pswd } = req.body;
 
-app.patch("/api/customers/:id", async (req, res) => {
-  try {
-    const customerId = req.params.id;
-    const customer = await Customer.findOneAndUpdate(
-      { _id: customerId },
-      req.body,
-      { new: true }
-    );
-    res.json({ customer });
-  } catch (e) {
-    res.status(500).json({ error: "something went wrong" });
-  }
-});
+    if (!name || !mail || !phone || !pswd) {
+      return res.status(400).send({
+        message: "All required fields must be provided.",
+      });
+    }
 
-app.delete("/api/customers/:id", async (req, res) => {
-  try {
-    const customerId = req.params.id;
-    const result = await Customer.deleteOne({ _id: customerId });
-    res.json({ deletedCount: result.deletedCount });
-  } catch (e) {
-    res.status(500).json({ error: "Something went wrong" });
-  }
-});
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(mail)) {
+      return res.status(400).send({
+        message: "Invalid email format.",
+      });
+    }
+    console.log(req.body);
+    const hashedPassword = await bcrypt.hash(pswd, 10);
 
-app.post("/api/customers", async (req, res) => {
-  const customer = new Customer(req.body);
-  try {
-    await customer.save();
-    res.status(201).json({ customer });
-  } catch (e) {
-    res.status(400).json({ error: e.message });
+    const newUser = {
+      name,
+      mail,
+      phone,
+      pswd: hashedPassword,
+    };
+
+    const user = await User.create(newUser);
+
+    return res.status(201).send(user);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send({ message: "Internal Server Error" });
   }
 });
 
 const start = async () => {
   try {
     await mongoose.connect(CONNECTION);
-    app.listen(() => {
+    app.listen(PORT, () => {
       console.log("App listening on port " + PORT);
     });
   } catch (e) {
