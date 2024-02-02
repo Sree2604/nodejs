@@ -70,7 +70,7 @@ app.post("/users", async (req, res) => {
     return res.status(201).send(user);
   } catch (error) {
     console.error(error.message);
-    res.status(500).send({ message: "Internal Server Error" });
+    res.status(500).send(error.message);
   }
 });
 
