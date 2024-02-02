@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const Customer = require("./models/customer");
+const User = require("./models/user");
 const cors = require("cors");
 
 const app = express();
@@ -69,6 +70,21 @@ app.post("/users", async (req, res) => {
     return res.status(201).send(user);
   } catch (error) {
     console.error(error.message);
+    res.status(500).send({ message: "Internal Server Error" });
+  }
+});
+
+app.get("/", async (req, res) => {
+  try {
+    const user = await User.find({});
+
+    if (!user) {
+      return res.status(404).json({ message: "Users not found" });
+    }
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.log(error.message);
     res.status(500).send({ message: "Internal Server Error" });
   }
 });
