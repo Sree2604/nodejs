@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/app.js",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
-    "start": "npx nodemon"
+    "start": "node src/app.js"
   },
   "author": "",
   "license": "ISC",
