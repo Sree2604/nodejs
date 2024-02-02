@@ -1,29 +1,37 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const Customer = require("./models/customer");
 const User = require("./models/user");
+const bcrypt = require("bcrypt");
 const cors = require("cors");
 
 const app = express();
 mongoose.set("strictQuery", false);
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ extended: true }));
 app.use(express.urlencoded({ extended: true }));
 
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT ?? 3000;
 const CONNECTION = process.env.CONNECTION;
 
 if (!CONNECTION) {
-  console.error();
-  process.exit(1);
+  console.error("Connection string is not provided.");
+  process.exitCode = 1;
+  process.exit();
 }
 
-app.get("/:mail", async (req, res) => {
+app.use((err, req, res, next) => {
+  console.error(err.message);
+  res.status(500).send({ message: "Internal Server Error" });
+});
+
+const router = express.Router();
+
+router.get("/:mail", async (req, res, next) => {
   try {
     const { mail } = req.params;
     const user = await User.findOne({ mail });
@@ -34,12 +42,11 @@ app.get("/:mail", async (req, res) => {
 
     return res.status(200).json(user);
   } catch (error) {
-    console.log(error.message);
-    res.status(500).send({ message: "Internal Server Error" });
+    next(error);
   }
 });
 
-app.post("/users", async (req, res) => {
+router.post("/register", async (req, res, next) => {
   try {
     const { name, mail, phone, pswd } = req.body;
 
@@ -55,7 +62,7 @@ app.post("/users", async (req, res) => {
         message: "Invalid email format.",
       });
     }
-    console.log(req.body);
+
     const hashedPassword = await bcrypt.hash(pswd, 10);
 
     const newUser = {
@@ -69,25 +76,11 @@ app.post("/users", async (req, res) => {
 
     return res.status(201).send(user);
   } catch (error) {
-    console.error(error.message);
-    res.status(500).send(error.message);
+    next(error);
   }
 });
 
-app.get("/", async (req, res) => {
-  try {
-    const user = await User.find({});
-
-    if (!user) {
-      return res.status(404).json({ message: "Users not found" });
-    }
-
-    return res.status(200).json(user);
-  } catch (error) {
-    console.log(error.message);
-    res.status(500).send({ message: "Internal Server Error" });
-  }
-});
+app.use("/", router);
 
 const start = async () => {
   try {
@@ -96,7 +89,9 @@ const start = async () => {
       console.log("App listening on port " + PORT);
     });
   } catch (e) {
-    console.log(e.message);
+    console.error("Error connecting to the database:", e.message);
+    process.exitCode = 1;
+    process.exit();
   }
 };
 
