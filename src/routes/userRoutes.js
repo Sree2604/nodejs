@@ -5,7 +5,7 @@ const Cart = require("../models/cart");
 
 const router = express.Router();
 
-router.post("/register", async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { name, mail, phone, pswd } = req.body;
 
@@ -40,7 +40,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.get("/profile/:mail", async (req, res) => {
+router.get("/:mail", async (req, res) => {
   try {
     const { mail } = req.params;
     const user = await User.findOne({ mail });
