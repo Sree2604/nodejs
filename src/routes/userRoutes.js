@@ -5,23 +5,23 @@ const Cart = require("../models/cart");
 
 const router = express.Router();
 
-router.post("/", async (req, res) => {
+router.post("/register", async (req, res) => {
   try {
     const { name, mail, phone, pswd } = req.body;
 
     if (!name || !mail || !phone || !pswd) {
-      return res.status(400).send({
+      return res.status(400).json({
         message: "All required fields must be provided.",
       });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(mail)) {
-      return res.status(400).send({
+      return res.status(400).json({
         message: "Invalid email format.",
       });
     }
-    console.log(req.body);
+
     const hashedPassword = await bcrypt.hash(pswd, 10);
 
     const newUser = {
@@ -33,14 +33,14 @@ router.post("/", async (req, res) => {
 
     const user = await User.create(newUser);
 
-    return res.status(201).send(user);
+    return res.status(201).json(user);
   } catch (error) {
     console.error(error.message);
-    res.status(500).send({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-router.get("/:mail", async (req, res) => {
+router.get("/profile/:mail", async (req, res) => {
   try {
     const { mail } = req.params;
     const user = await User.findOne({ mail });
@@ -51,12 +51,12 @@ router.get("/:mail", async (req, res) => {
 
     return res.status(200).json(user);
   } catch (error) {
-    console.log(error.message);
-    res.status(500).send({ message: "Internal Server Error" });
+    console.error(error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-router.get("/", async (req, res) => {
+router.get("/users", async (req, res) => {
   try {
     const users = await User.find({});
 
@@ -66,21 +66,26 @@ router.get("/", async (req, res) => {
     });
   } catch (error) {
     console.error(error.message);
-    res.status(500).send({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 });
 
-router.post("/addTocart", async (req, res) => {
+router.post("/cart", async (req, res) => {
   try {
     const { userId, product, quantity } = req.body;
 
+    if (!userId || !product || !quantity) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
     const user = await User.findById(userId);
+
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
     const existingCartItemIndex = user.cart.findIndex(
-      (item) => item.product == product
+      (item) => item.product === product
     );
 
     if (existingCartItemIndex !== -1) {
@@ -111,13 +116,18 @@ router.delete("/cart", async (req, res) => {
   try {
     const { userId, product } = req.body;
 
+    if (!userId || !product) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
     const user = await User.findById(userId);
+
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
     const existingCartItemIndex = user.cart.findIndex(
-      (item) => item.product == product
+      (item) => item.product === product
     );
 
     if (existingCartItemIndex !== -1) {
