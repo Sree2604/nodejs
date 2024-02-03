@@ -4,23 +4,23 @@ const multer = require('multer');
 
 const router = express.Router();
 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, 'uploads/'); // Destination for product images
+      cb(null, 'uploads/');
     },
     filename: function (req, file, cb) {
-      // Generating a unique filename for uploaded product images
       cb(null, file.originalname);
     },
   });
   
-  const upload = multer({ storage: storage }).single('image'); // Use .single() instead of .array() or .fields()
+  const upload = multer({ storage: storage }).single('image');
   
   router.post('/', (req, res) => {
     upload(req, res, async (err) => {
       try {
         if (err) {
-          // Handle multer error
           console.error(err.message);
           return res.status(500).send('File upload error');
         }
