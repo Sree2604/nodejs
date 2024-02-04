@@ -78,7 +78,17 @@ router.post("/cart", async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+development
+            existingCartItem.quantity = parseInt(existingCartItem.quantity) + parseInt(quantity);
+            user.cart.splice(existingCartItemIndex,1);
+            user.cart.push(existingCartItem)
+        } else {
+            const cartItem = new Cart({ product, quantity });
+            user.cart.push(cartItem);
+        }
+
     const user = await User.findById(userId);
+ main
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
