@@ -40,10 +40,16 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/:mail", async (req, res) => {
+router.get("/:identifier", async (req, res) => {
   try {
-    const { mail } = req.params;
-    const user = await User.findOne({ mail });
+    const { identifier } = req.params;
+    let user;
+
+    if (mongoose.Types.ObjectId.isValid(identifier)) {
+      user = await User.findOne({ _id: identifier });
+    } else {
+      user = await User.findOne({ mail: identifier });
+    }
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
