@@ -26,7 +26,7 @@ router.post("/", (req, res) => {
 
       const { name, price, description, stock } = req.body;
 
-      if (!name || !price || !description || !stock) {
+      if (!name || !price || !description || !stock || !price) {
         return res.status(400).send("Missing required fields");
       }
 
