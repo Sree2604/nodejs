@@ -89,7 +89,7 @@ router.post('/addTocart', async (req, res) => {
             user.cart.splice(existingCartItemIndex,1);
             user.cart.push(existingCartItem)
         } else {
-            const cartItem = new Cart({ product, userId, quantity });
+            const cartItem = new Cart({ product, quantity });
             user.cart.push(cartItem);
         }
 

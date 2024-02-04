@@ -1,10 +1,11 @@
 const express = require('express')
 const Products = require('../models/products')
 const multer = require('multer');
+const path = require('path');
 
 const router = express.Router();
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+router.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
