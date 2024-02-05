@@ -46,10 +46,8 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 const start = async () => {
   try {
-    await mongoose.connect(CONNECTION, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(CONNECTION);
+
     console.log("Connected to MongoDB");
 
     app.listen(PORT, () => {
