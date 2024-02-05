@@ -42,7 +42,7 @@ app.use((err, req, res, next) => {
 
 app.use("/users", userRoutes);
 app.use("/products", productRoutes);
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 const start = async () => {
   try {
