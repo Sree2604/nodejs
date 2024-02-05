@@ -1,11 +1,17 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+development
 
 const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
 const path = require('path');
 
+
+const userRoutes = require("./routes/userRoutes");
+const productRoutes = require("./routes/productRoutes");
+const path = require("path");
+ main
 
 const app = express();
 mongoose.set("strictQuery", false);
@@ -45,6 +51,7 @@ app.use((err, req, res, next) => {
 
 app.use("/users", userRoutes);
 app.use("/products", productRoutes);
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
