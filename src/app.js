@@ -1,13 +1,12 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const path = require("path");
 
 const userRoutes = require("./routes/userRoutes");
 const productRoutes = require("./routes/productRoutes");
-const path = require("path");
 
 const app = express();
-mongoose.set("strictQuery", false);
 
 app.use(cors());
 app.use(express.json({ extended: true }));
@@ -22,8 +21,7 @@ const CONNECTION = process.env.CONNECTION;
 
 if (!CONNECTION) {
   console.error("Connection string is not provided.");
-  process.exitCode = 1;
-  process.exit();
+  process.exit(1);
 }
 
 app.use((err, req, res, next) => {
@@ -59,8 +57,7 @@ const start = async () => {
     });
   } catch (e) {
     console.error("Error connecting to the database:", e.message);
-    process.exitCode = 1;
-    process.exit();
+    process.exit(1);
   }
 
   process.on("SIGINT", () => {
