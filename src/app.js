@@ -55,8 +55,8 @@ const start = async () => {
     app.listen(PORT, () => {
       console.log(`App listening on port ${PORT}`);
     });
-  } catch (e) {
-    console.error("Error connecting to the database:", e.message);
+  } catch (error) {
+    console.error("Error during startup:", error);
     process.exit(1);
   }
 
@@ -68,4 +68,5 @@ const start = async () => {
   });
 };
 
+// Call the start function
 start();
