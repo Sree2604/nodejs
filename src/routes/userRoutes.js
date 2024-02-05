@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const Cart = require("../models/cart");
-const mongoose = require('mongoose');
+
 const router = express.Router();
 
 router.post("/", async (req, res) => {
@@ -56,7 +56,6 @@ router.get("/:identifier", async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-
     return res.status(200).json(user);
   } catch (error) {
     console.error(error.message);
@@ -64,10 +63,9 @@ router.get("/:identifier", async (req, res) => {
   }
 });
 
-router.get('/', async (req, res) => {
-    try {
-        const users = await User.find({});
-
+router.get("/", async (req, res) => {
+  try {
+    const users = await User.find({});
 
     return res.status(200).json({
       count: users.length,
