@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const Cart = require("../models/cart");
-
+const mongoose = require('mongoose');
 const router = express.Router();
 
 router.post('/', async (req, res) => {
@@ -40,21 +40,28 @@ router.post('/', async (req, res) => {
     }
 });
 
-router.get('/:mail', async (req, res) => {
-    try {
-        const { mail } = req.params;
-        const user = await User.findOne({ mail });
+router.get("/:identifier", async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    let user;
 
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        return res.status(200).json(user);
-    } catch (error) {
-        console.log(error.message);
-        res.status(500).send({ message: 'Internal Server Error' });
+    if (mongoose.Types.ObjectId.isValid(identifier)) {
+      user = await User.findOne({ _id: identifier });
+    } else {
+      user = await User.findOne({ mail: identifier });
     }
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
 });
+
 
 router.get('/', async (req, res) => {
     try {
