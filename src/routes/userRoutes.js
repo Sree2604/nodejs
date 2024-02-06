@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const Cart = require("../models/cart");
+const jwt = require("jsonwebtoken");
 
 const router = express.Router();
 
@@ -60,6 +61,17 @@ router.get("/:identifier", async (req, res) => {
   } catch (error) {
     console.error(error.message);
     return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+router.get("/admin/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const token = jwt.sign({ userId: id }, secretKey, { expiresIn: "1h" });
+    return res.status(200).send(token);
+  } catch (error) {
+    console.err;
+    return res.status(500).send("Internal Eerver Error");
   }
 });
 
