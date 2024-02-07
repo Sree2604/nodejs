@@ -1,3 +1,4 @@
+development
 
 const express = require('express')
 const Products = require('../models/products')
@@ -9,6 +10,14 @@ const router = express.Router();
 router.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
+
+const express = require("express");
+const Products = require("../models/products");
+const multer = require("multer");
+
+const router = express.Router();
+
+main
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/");
@@ -30,7 +39,7 @@ router.post("/", (req, res) => {
 
       const { name, price, description, stock } = req.body;
 
-      if (!name || !price || !description || !stock) {
+      if (!name || !price || !description || !stock || !price) {
         return res.status(400).send("Missing required fields");
       }
 
@@ -63,10 +72,10 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/:name", async (req, res) => {
+router.get("/:_id", async (req, res) => {
   try {
-    const { name } = req.params;
-    const product = await Products.findOne({ name });
+    const { _id } = req.params;
+    const product = await Products.findOne({ _id });
 
     if (!product) {
       return res.status(404).send("No products found...!!");
@@ -79,10 +88,10 @@ router.get("/:name", async (req, res) => {
   }
 });
 
-router.delete("/:name", async (req, res) => {
+router.delete("/:_id", async (req, res) => {
   try {
-    const { name } = req.params;
-    await Products.deleteOne({ name });
+    const { _id } = req.params;
+    await Products.deleteOne({ _id });
     return res.status(201).send("Product Deleted..!!");
   } catch (error) {
     console.log(error.message);
@@ -90,10 +99,10 @@ router.delete("/:name", async (req, res) => {
   }
 });
 
-router.put("/:name", async (req, res) => {
+router.put("/:_id", async (req, res) => {
   try {
-    const { name } = req.params;
-    const result = await Products.findOneAndUpdate({ name }, req.body);
+    const { _id } = req.params;
+    const result = await Products.findOneAndUpdate({ _id }, req.body);
 
     if (!result) {
       return res.status(404).json({ message: "Product not found" });
