@@ -1,20 +1,12 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-development
-
-const userRoutes = require('./routes/userRoutes');
-const productRoutes = require('./routes/productRoutes');
-const path = require('path');
-
+const path = require("path");
 
 const userRoutes = require("./routes/userRoutes");
 const productRoutes = require("./routes/productRoutes");
-const path = require("path");
- main
 
 const app = express();
-mongoose.set("strictQuery", false);
 
 app.use(cors());
 app.use(express.json({ extended: true }));
@@ -29,8 +21,7 @@ const CONNECTION = process.env.CONNECTION;
 
 if (!CONNECTION) {
   console.error("Connection string is not provided.");
-  process.exitCode = 1;
-  process.exit();
+  process.exit(1);
 }
 
 app.use((err, req, res, next) => {
@@ -53,23 +44,18 @@ app.use("/users", userRoutes);
 app.use("/products", productRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-
 const start = async () => {
   try {
-    await mongoose.connect(CONNECTION, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(CONNECTION);
+
     console.log("Connected to MongoDB");
 
     app.listen(PORT, () => {
       console.log(`App listening on port ${PORT}`);
     });
-  } catch (e) {
-    console.error("Error connecting to the database:", e.message);
-    process.exitCode = 1;
-    process.exit();
+  } catch (error) {
+    console.error("Error during startup:", error);
+    process.exit(1);
   }
 
   process.on("SIGINT", () => {
@@ -80,4 +66,5 @@ const start = async () => {
   });
 };
 
+// Call the start function
 start();
