@@ -1,5 +1,7 @@
 const express = require("express");
 const Products = require("../models/products");
+const Carousel = require("../models/carousel");
+const Bestseller = require("../models/bestSeller");
 const multer = require("multer");
 const path = require("path");
 
@@ -14,7 +16,18 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage }).single("image");
+const carouselStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/carousels");
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+
+const carouselUpload = multer({ storage: carouselStorage });
+
+const upload = multer({ storage: storage }).single("photo");
 
 router.post("/", (req, res) => {
   upload(req, res, async (err) => {
@@ -24,9 +37,17 @@ router.post("/", (req, res) => {
         return res.status(500).send("File upload error");
       }
 
-      const { name, price, description, stock } = req.body;
+      const { name, price, description, stock, rating, numOfRating } = req.body;
 
-      if (!name || !price || !description || !stock || !price) {
+      if (
+        !name ||
+        !price ||
+        !description ||
+        !stock ||
+        !price ||
+        !rating ||
+        !numOfRating
+      ) {
         return res.status(400).send("Missing required fields");
       }
 
@@ -36,9 +57,9 @@ router.post("/", (req, res) => {
         name: name,
         price: price,
         photo: image,
-        description: description,
         rating: rating,
         numOfRating: numOfRating,
+        description: description,
         stock: stock,
       });
 
@@ -113,13 +134,19 @@ router.get("/:_id", async (req, res) => {
 });
 
 router.put("/:_id", async (req, res) => {
+  const { _id } = req.params;
+  const { name, price, description, stock } = req.body;
+  console.log(req.body);
+
   try {
-    const { _id } = req.params;
-    const { name, price, description, stock } = req.body;
+    if (!name || !price || !description || !stock) {
+      return res.status(400).json({ message: "Incomplete data" });
+    }
+
     const product = await Products.findOne({ _id });
 
     if (!product) {
-      return res.status(404).send("No products found...!!");
+      return res.status(404).json({ message: "Product not found" });
     }
 
     const update = {
@@ -128,9 +155,14 @@ router.put("/:_id", async (req, res) => {
       description: description,
       stock: stock,
     };
+
     const updatedProduct = await Products.findByIdAndUpdate(_id, update);
-    return res.status(201).send("Product Updated..!!");
-  } catch (error) {}
+
+    return res.status(200).json({ message: "Product updated", updatedProduct });
+  } catch (error) {
+    console.error("Error updating product:", error.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 router.delete("/:_id", async (req, res) => {
@@ -144,19 +176,81 @@ router.delete("/:_id", async (req, res) => {
   }
 });
 
-router.put("/:_id", async (req, res) => {
-  try {
-    const { _id } = req.params;
-    const result = await Products.findOneAndUpdate({ _id }, req.body);
+router.post(
+  "/addcarousels",
+  carouselUpload.fields([
+    { name: "carouselImage1", maxCount: 1 },
+    { name: "carouselImage2", maxCount: 1 },
+    { name: "carouselImage3", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const carouselImageName1 = req.files["carouselImage1"][0].filename;
+      const carouselImageName2 = req.files["carouselImage2"][0].filename;
+      const carouselImageName3 = req.files["carouselImage3"][0].filename;
 
-    if (!result) {
+      const carouselInserts = [
+        { photo: carouselImageName1 },
+        { photo: carouselImageName2 },
+        { photo: carouselImageName3 },
+      ];
+
+      await Carousel.deleteMany({});
+
+      try {
+        await Carousel.create(carouselInserts);
+
+        res.status(200).send("Images inserted successfully.");
+      } catch (error) {
+        res.status(500).send("Error inserting images.");
+        console.error("Error inserting images:", error);
+      }
+    } catch (error) {
+      res.status(500).send("Error processing request.");
+      console.error("Error processing request:", error);
+    }
+  }
+);
+
+router.get("/admin/verify/:token", async (req, res) => {
+  try {
+    const decoded = jwt.verify(token, secretKey);
+    console.log(decoded); // Contains the decoded data
+  } catch (err) {
+    console.error("Token not valid");
+  }
+});
+
+router.post("/bestsellers/:productId", async (req, res) => {
+  const productId = req.params.productId;
+  try {
+    const product = await Products.findById(productId);
+    if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    return res.status(200).send({ message: "Product updated successfully" });
-  } catch (error) {
-    console.log(error.message);
-    return res.status(500).send({ message: error.message });
+    // Update the product's bestseller status
+    product.bestseller = !product.bestseller; // Toggle the bestseller status
+
+    await product.save();
+
+    res.status(204).end();
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get("/bestsellers", async (req, res) => {
+  try {
+    const bestsellers = await Products.find({ bestseller: true });
+
+    if (bestsellers.length === 0) {
+      return res.json([]); // Return an empty array if there are no bestsellers
+    }
+
+    res.json(bestsellers);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

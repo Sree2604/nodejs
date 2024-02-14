@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const Cart = require("../models/cart");
+const Wishlist = require("../models/wishlist");
 const jwt = require("jsonwebtoken");
 
 const router = express.Router();
@@ -64,14 +65,39 @@ router.get("/:identifier", async (req, res) => {
   }
 });
 
-router.get("/admin/:id", async (req, res) => {
+router.get("/admin/:secretKey", async (req, res) => {
   try {
-    const { id } = req.params;
-    const token = jwt.sign({ userId: id }, secretKey, { expiresIn: "1h" });
-    return res.status(200).send(token);
+    const { secretKey } = req.params;
+    const token = jwt.sign({ userId: 123 }, secretKey, { expiresIn: "1h" });
+    console.log(token);
+    return res.status(200).send({ token: token });
   } catch (error) {
     console.err;
     return res.status(500).send("Internal Eerver Error");
+  }
+});
+
+router.get("/admin/verify/:token", async (req, res) => {
+  try {
+    const { token } = req.params;
+    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+    console.log(decodedToken);
+    const userId = decodedToken.userId;
+
+    if (userId == 123) {
+      console.log("User is authorized");
+      return res
+        .status(200)
+        .json({ valid: true, message: "User is authorized" });
+    } else {
+      console.log("User is not authorized");
+      return res
+        .status(403)
+        .json({ valid: false, message: "User is not authorized" });
+    }
+  } catch (error) {
+    console.error("Token verification failed:", error);
+    return res.status(401).send({ valid: false, error: "Invalid token" });
   }
 });
 
@@ -158,6 +184,81 @@ router.delete("/cart", async (req, res) => {
     return res
       .status(200)
       .json({ message: "Product deleted from cart successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/wishlist", async (req, res) => {
+  try {
+    const { userId, product, quantity } = req.body;
+
+    if (!userId || !product || !quantity) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const existingWishlistItemIndex = user.wishlist.findIndex(
+      (item) => item.product === product
+    );
+
+    if (existingWishlistItemIndex !== -1) {
+      const existingWishlistItem = user.wishlist[existingWishlistItemIndex];
+      console.log("Updating existing item:", existingWishlistItem);
+
+      existingWishlistItem.quantity =
+        parseInt(existingWishlistItem.quantity) + parseInt(quantity);
+      user.wishlist.splice(existingWishlistItemIndex, 1);
+      user.wishlist.push(existingWishlistItem);
+    } else {
+      const wishlistItem = new Wishlist({ product });
+      user.wishlist.push(wishlistItem);
+    }
+
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ message: "Product added to wishlist successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/wishlist", async (req, res) => {
+  try {
+    const { userId, product } = req.body;
+
+    if (!userId || !product) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const existingWishlistItemIndex = user.wishlist.findIndex(
+      (item) => item.product === product
+    );
+
+    if (existingWishlistItemIndex !== -1) {
+      user.wishlist.splice(existingWishlistItemIndex, 1);
+    }
+
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ message: "Product deleted from wishlist successfully" });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal Server Error" });
