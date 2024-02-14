@@ -192,9 +192,9 @@ router.delete("/cart", async (req, res) => {
 
 router.post("/wishlist", async (req, res) => {
   try {
-    const { userId, product, quantity } = req.body;
+    const { userId, product } = req.body;
 
-    if (!userId || !product || !quantity) {
+    if (!userId || !product) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -212,8 +212,6 @@ router.post("/wishlist", async (req, res) => {
       const existingWishlistItem = user.wishlist[existingWishlistItemIndex];
       console.log("Updating existing item:", existingWishlistItem);
 
-      existingWishlistItem.quantity =
-        parseInt(existingWishlistItem.quantity) + parseInt(quantity);
       user.wishlist.splice(existingWishlistItemIndex, 1);
       user.wishlist.push(existingWishlistItem);
     } else {
