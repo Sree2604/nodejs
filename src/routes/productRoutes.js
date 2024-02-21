@@ -1,7 +1,8 @@
+
 const express = require("express");
 const Products = require("../models/products");
-const Carousel = require("../models/carousel");
-const Bestseller = require("../models/bestSeller");
+const Carousel = require('../models/carousel')
+const Bestseller = require('../models/bestSeller')
 const multer = require("multer");
 const path = require("path");
 
@@ -25,7 +26,7 @@ const carouselStorage = multer.diskStorage({
   },
 });
 
-const carouselUpload = multer({ storage: carouselStorage });
+const carouselUpload = multer({ storage: carouselStorage })
 
 const upload = multer({ storage: storage }).single("photo");
 
@@ -39,15 +40,7 @@ router.post("/", (req, res) => {
 
       const { name, price, description, stock, rating, numOfRating } = req.body;
 
-      if (
-        !name ||
-        !price ||
-        !description ||
-        !stock ||
-        !price ||
-        !rating ||
-        !numOfRating
-      ) {
+      if (!name || !price || !description || !stock || !price || !rating || !numOfRating) {
         return res.status(400).send("Missing required fields");
       }
 
@@ -136,7 +129,7 @@ router.get("/:_id", async (req, res) => {
 router.put("/:_id", async (req, res) => {
   const { _id } = req.params;
   const { name, price, description, stock } = req.body;
-  console.log(req.body);
+  console.log(req.body)
 
   try {
     if (!name || !price || !description || !stock) {
@@ -165,6 +158,7 @@ router.put("/:_id", async (req, res) => {
   }
 });
 
+
 router.delete("/:_id", async (req, res) => {
   try {
     const { _id } = req.params;
@@ -176,52 +170,51 @@ router.delete("/:_id", async (req, res) => {
   }
 });
 
-router.post(
-  "/addcarousels",
-  carouselUpload.fields([
-    { name: "carouselImage1", maxCount: 1 },
-    { name: "carouselImage2", maxCount: 1 },
-    { name: "carouselImage3", maxCount: 1 },
-  ]),
-  async (req, res) => {
+router.post('/addcarousels', carouselUpload.fields([
+  { name: 'carouselImage1', maxCount: 1 },
+  { name: 'carouselImage2', maxCount: 1 },
+  { name: 'carouselImage3', maxCount: 1 },
+  { name: 'carouselImage4', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const carouselImageName1 = req.files['carouselImage1'][0].filename;
+    const carouselImageName2 = req.files['carouselImage2'][0].filename;
+    const carouselImageName3 = req.files['carouselImage3'][0].filename;
+    const carouselImageName4 = req.files['carouselImage4'][0].filename;
+
+    const carouselInserts = [
+      { photo: carouselImageName1 },
+      { photo: carouselImageName2 },
+      { photo: carouselImageName3 },
+      { photo: carouselImageName4 },
+    ];
+
+    await Carousel.deleteMany({});
+
     try {
-      const carouselImageName1 = req.files["carouselImage1"][0].filename;
-      const carouselImageName2 = req.files["carouselImage2"][0].filename;
-      const carouselImageName3 = req.files["carouselImage3"][0].filename;
+      await Carousel.create(carouselInserts);
 
-      const carouselInserts = [
-        { photo: carouselImageName1 },
-        { photo: carouselImageName2 },
-        { photo: carouselImageName3 },
-      ];
-
-      await Carousel.deleteMany({});
-
-      try {
-        await Carousel.create(carouselInserts);
-
-        res.status(200).send("Images inserted successfully.");
-      } catch (error) {
-        res.status(500).send("Error inserting images.");
-        console.error("Error inserting images:", error);
-      }
+      res.status(200).send('Images inserted successfully.');
     } catch (error) {
-      res.status(500).send("Error processing request.");
-      console.error("Error processing request:", error);
+      res.status(500).send('Error inserting images.');
+      console.error('Error inserting images:', error);
     }
+  } catch (error) {
+    res.status(500).send('Error processing request.');
+    console.error('Error processing request:', error);
   }
-);
+});
 
 router.get("/admin/verify/:token", async (req, res) => {
   try {
     const decoded = jwt.verify(token, secretKey);
     console.log(decoded); // Contains the decoded data
   } catch (err) {
-    console.error("Token not valid");
+    console.error('Token not valid');
   }
-});
+})
 
-router.post("/bestsellers/:productId", async (req, res) => {
+router.post('/bestsellers/:productId', async (req, res) => {
   const productId = req.params.productId;
   try {
     const product = await Products.findById(productId);
@@ -240,10 +233,10 @@ router.post("/bestsellers/:productId", async (req, res) => {
   }
 });
 
-router.get("/bestsellers", async (req, res) => {
+router.get('/bestsellers', async (req, res) => {
   try {
     const bestsellers = await Products.find({ bestseller: true });
-
+    
     if (bestsellers.length === 0) {
       return res.json([]); // Return an empty array if there are no bestsellers
     }
@@ -253,5 +246,8 @@ router.get("/bestsellers", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+
+
 
 module.exports = router;

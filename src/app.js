@@ -66,5 +66,4 @@ const start = async () => {
   });
 };
 
-// Call the start function
 start();
