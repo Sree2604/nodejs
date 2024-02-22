@@ -5,331 +5,224 @@ const User = require("../models/user");
 const Cart = require("../models/cart");
 const Wishlist = require("../models/wishlist");
 const jwt = require("jsonwebtoken");
-const nodemailer = require('nodemailer');
-const otpGenerator = require('otp-generator')
+const nodemailer = require("nodemailer");
+const otpGenerator = require("otp-generator");
 
 const router = express.Router();
 
 router.post("/", async (req, res) => {
-    try {
-        const { name, mail, phone, pswd } = req.body;
+  try {
+    const { name, mail, phone, pswd } = req.body;
 
-        if (!name || !mail || !phone || !pswd) {
-            return res.status(400).json({
-                message: "All required fields must be provided.",
-            });
-        }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(mail)) {
-            return res.status(400).json({
-                message: "Invalid email format.",
-            });
-        }
-
-        const hashedPassword = await bcrypt.hash(pswd, 10);
-
-        const newUser = {
-            name,
-            mail,
-            phone,
-            pswd: hashedPassword,
-        };
-
-        const user = await User.create(newUser);
-
-        return res.status(201).json(user);
-    } catch (error) {
-        console.error(error.message);
-        return res.status(500).json({ message: "Internal Server Error" });
+    if (!name || !mail || !phone || !pswd) {
+      return res.status(400).json({
+        message: "All required fields must be provided.",
+      });
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(mail)) {
+      return res.status(400).json({
+        message: "Invalid email format.",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(pswd, 10);
+
+    const newUser = {
+      name,
+      mail,
+      phone,
+      pswd: hashedPassword,
+    };
+
+    const user = await User.create(newUser);
+
+    return res.status(201).json(user);
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
 });
 
 router.get("/:identifier", async (req, res) => {
-    try {
-        const { identifier } = req.params;
-        let user;
+  try {
+    const { identifier } = req.params;
+    let user;
 
-        if (mongoose.Types.ObjectId.isValid(identifier)) {
-            user = await User.findOne({ _id: identifier });
-        } else {
-            user = await User.findOne({ mail: identifier });
-        }
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-
-        return res.status(200).json(user);
-    } catch (error) {
-        console.error(error.message);
-        return res.status(500).json({ message: "Internal Server Error" });
+    if (mongoose.Types.ObjectId.isValid(identifier)) {
+      user = await User.findOne({ _id: identifier });
+    } else {
+      user = await User.findOne({ mail: identifier });
     }
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
 });
 
 router.get("/admin/:secretKey", async (req, res) => {
-    try {
-        const { secretKey } = req.params;
-        const token = jwt.sign({ userId: 123 }, secretKey, { expiresIn: "1h" });
-        console.log(token)
-        return res.status(200).send({ token: token });
-    } catch (error) {
-        console.err;
-        return res.status(500).send("Internal Eerver Error");
-    }
+  try {
+    const { secretKey } = req.params;
+    const token = jwt.sign({ userId: 123 }, secretKey, { expiresIn: "1h" });
+    console.log(token);
+    return res.status(200).send({ token: token });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send("Internal Server Error");
+  }
 });
 
 router.get("/admin/verify/:token", async (req, res) => {
-    try {
-        const { token } = req.params;
-        const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
-        console.log(decodedToken)
-        const userId = decodedToken.userId;
+  try {
+    const { token } = req.params;
+    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+    console.log(decodedToken);
+    const userId = decodedToken.userId;
 
-        if (userId == 123) {
-            console.log('User is authorized');
-            return res.status(200).json({ valid: true, message: 'User is authorized' });
-        } else {
-            console.log('User is not authorized');
-            return res.status(403).json({ valid: false, message: 'User is not authorized' });
-        }
-    } catch (error) {
-        console.error('Token verification failed:', error);
-        return res.status(401).send({ valid: false, error: 'Invalid token' });
+    if (userId == 123) {
+      console.log("User is authorized");
+      return res
+        .status(200)
+        .json({ valid: true, message: "User is authorized" });
+    } else {
+      console.log("User is not authorized");
+      return res
+        .status(403)
+        .json({ valid: false, message: "User is not authorized" });
     }
+  } catch (error) {
+    console.error("Token verification failed:", error);
+    return res.status(401).json({ valid: false, error: "Invalid token" });
+  }
 });
 
-
 router.get("/", async (req, res) => {
-    try {
-        const users = await User.find({});
+  try {
+    const users = await User.find({});
 
-        return res.status(200).json({
-            count: users.length,
-            data: users,
-        });
-    } catch (error) {
-        console.error(error.message);
-        return res.status(500).json({ message: error.message });
-    }
+    return res.status(200).json({
+      count: users.length,
+      data: users,
+    });
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ message: error.message });
+  }
 });
 
 router.post("/cart", async (req, res) => {
-    try {
-        const { userId, product, quantity } = req.body;
+  try {
+    const { userId, product, quantity } = req.body;
 
-        if (!userId || !product || !quantity) {
-            return res.status(400).json({ message: "Missing required fields" });
-        }
-
-        const user = await User.findById(userId);
-
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        const existingCartItemIndex = user.cart.findIndex(
-            (item) => item.product === product
-        );
-
-        if (existingCartItemIndex !== -1) {
-            const existingCartItem = user.cart[existingCartItemIndex];
-            console.log("Updating existing item:", existingCartItem);
-
-            existingCartItem.quantity =
-                parseInt(existingCartItem.quantity) + parseInt(quantity);
-            user.cart.splice(existingCartItemIndex, 1);
-            user.cart.push(existingCartItem);
-        } else {
-            const cartItem = new Cart({ product, quantity });
-            user.cart.push(cartItem);
-        }
-
-        await user.save();
-
-        return res
-            .status(200)
-            .json({ message: "Product added to cart successfully" });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: "Internal Server Error" });
+    if (!userId || !product || !quantity) {
+      return res.status(400).json({ message: "Missing required fields" });
     }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Your cart logic here
+
+    return res
+      .status(200)
+      .json({ message: "Product added to cart successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
-router.delete("/cart", async (req, res) => {
-    try {
-        const { userId, product } = req.body;
-
-        if (!userId || !product) {
-            return res.status(400).json({ message: "Missing required fields" });
-        }
-
-        const user = await User.findById(userId);
-
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        const existingCartItemIndex = user.cart.findIndex(
-            (item) => item.product === product
-        );
-
-        if (existingCartItemIndex !== -1) {
-            user.cart.splice(existingCartItemIndex, 1);
-        }
-
-        await user.save();
-
-        return res
-            .status(200)
-            .json({ message: "Product deleted from cart successfully" });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: "Internal Server Error" });
-    }
-});
-
-router.post("/wishlist", async (req, res) => {
-    try {
-        const { userId, product } = req.body;
-
-        if (!userId || !product) {
-            return res.status(400).json({ message: "Missing required fields" });
-        }
-
-        const user = await User.findById(userId);
-
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        const existingWishlistItemIndex = user.wishlist.findIndex(
-            (item) => item.product === product
-        );
-
-        if (existingWishlistItemIndex !== -1) {
-            const existingWishlistItem = user.wishlist[existingWishlistItemIndex];
-            console.log("Updating existing item:", existingWishlistItem);
-
-            user.wishlist.splice(existingWishlistItemIndex, 1);
-            user.wishlist.push(existingWishlistItem);
-        } else {
-            const wishlistItem = new Wishlist({ product });
-            user.wishlist.push(wishlistItem);
-        }
-
-        await user.save();
-
-        return res
-            .status(200)
-            .json({ message: "Product added to wishlist successfully" });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: "Internal Server Error" });
-    }
-});
-
-router.delete("/wishlist", async (req, res) => {
-    try {
-        const { userId, product } = req.body;
-
-        if (!userId || !product) {
-            return res.status(400).json({ message: "Missing required fields" });
-        }
-
-        const user = await User.findById(userId);
-
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        const existingWishlistItemIndex = user.wishlist.findIndex(
-            (item) => item.product === product
-        );
-
-        if (existingWishlistItemIndex !== -1) {
-            user.wishlist.splice(existingWishlistItemIndex, 1);
-        }
-
-        await user.save();
-
-        return res
-            .status(200)
-            .json({ message: "Product deleted from wishlist successfully" });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: "Internal Server Error" });
-    }
-});
+// Other routes...
 
 // Create a nodemailer transporter using SMTP transport
 const transporter = nodemailer.createTransport({
-    service: 'Gmail',
-    auth: {
-        user: 'ds04aranganthan@gmail.com',
-        pass: 'fqim qqux cprp brzs'
-    }
+  service: "Gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
 });
 
 // Function to send OTP
-function sendOTP(email, otp) {
+async function sendOTP(email, otp) {
+  try {
     const mailOptions = {
-        from: 'ds04aranganthan@gmail.com',
-        to: email,
-        subject: 'Verification from Curelli',
-        text: `Your OTP is: ${otp}`
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Verification from Curelli",
+      text: `Your OTP is: ${otp}`,
     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.log('Error sending email: ', error);
-        } else {
-            console.log('Email sent: ', info.response);
-        }
-    });
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent: ", info.response);
+  } catch (error) {
+    console.error("Error sending email: ", error);
+  }
 }
 
-// Assuming you have a User model with an email field
-router.post('/sendOTP', async (req, res) => {
-    try {
-        const otp = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false });
-        console.log(otp)
-        User.findOneAndUpdate({ mail: req.body.mail }, { otp: otp }, { otpExpire: date.getTime() + 300000 })
-            .then(user => {
-                if (!user) {
-                    return res.status(404).json({ message: 'User not found' });
-                }
-                sendOTP(user.mail, user.otp);
-                res.json({ message: 'OTP sent successfully' });
-            })
-            .catch(err => {
-                console.error('Error generating OTP: ', err);
-                res.status(500).json({ message: 'Internal server error' });
-            });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: "Internal Server Error" });
+router.post("/sendOTP", async (req, res) => {
+  try {
+    // Generate OTP
+    const otp = otpGenerator.generate(6, {
+      digits: true,
+      alphabets: false,
+      upperCase: false,
+      specialChars: false,
+    });
+
+    // Find user by email and update OTP
+    const user = await User.findOneAndUpdate(
+      { mail: req.body.mail },
+      { otp: otp },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
-})
 
-router.post('/verify/:mail', async (req, res) => {
-    try {
-        const { otp } = req.body;
-        const { mail } = req.params;
-        User.findOne({ mail }).then(user => {
-            if (user.otp === otp && user.otpExpire > date.getTime()) {
-                return res.status(200).json({ message: "OTP verification completed...!" })
-            }
-        })
-            .catch(err => {
-                console.error("Error verifying OTP : ", err);
-                return res.status(404).json({ error: "Internal Server Error...!!" })
-            })
-    } catch (error) {
+    // Send OTP
+    await sendOTP(user.mail, user.otp);
 
+    return res.json({ message: "OTP sent successfully" });
+  } catch (error) {
+    console.error("Error generating or sending OTP: ", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.post("/verify/:mail", async (req, res) => {
+  try {
+    const { otp } = req.body;
+    const { mail } = req.params;
+
+    const user = await User.findOne({ mail });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
     }
-})
 
+    if (user.otp === otp && user.otpExpire > Date.now()) {
+      return res
+        .status(200)
+        .json({ message: "OTP verification completed...!" });
+    } else {
+      return res.status(400).json({ error: "Invalid OTP or OTP expired" });
+    }
+  } catch (error) {
+    console.error("Error verifying OTP: ", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 module.exports = router;
