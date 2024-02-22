@@ -74,15 +74,15 @@ router.get("/admin/:secretKey", async (req, res) => {
     console.log(token);
     return res.status(200).send({ token: token });
   } catch (error) {
-    console.error(error);
-    return res.status(500).send("Internal Server Error");
+    console.err;
+    return res.status(500).send("Internal Eerver Error");
   }
 });
 
 router.get("/admin/verify/:token", async (req, res) => {
   try {
     const { token } = req.params;
-    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+    const decodedToken = jwt.verify(token, req.params.secretKey); // Using the secretKey from URL params
     console.log(decodedToken);
     const userId = decodedToken.userId;
 
@@ -99,7 +99,7 @@ router.get("/admin/verify/:token", async (req, res) => {
     }
   } catch (error) {
     console.error("Token verification failed:", error);
-    return res.status(401).json({ valid: false, error: "Invalid token" });
+    return res.status(401).send({ valid: false, error: "Invalid token" });
   }
 });
 
@@ -131,7 +131,24 @@ router.post("/cart", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Your cart logic here
+    const existingCartItemIndex = user.cart.findIndex(
+      (item) => item.product === product
+    );
+
+    if (existingCartItemIndex !== -1) {
+      const existingCartItem = user.cart[existingCartItemIndex];
+      console.log("Updating existing item:", existingCartItem);
+
+      existingCartItem.quantity =
+        parseInt(existingCartItem.quantity) + parseInt(quantity);
+      user.cart.splice(existingCartItemIndex, 1);
+      user.cart.push(existingCartItem);
+    } else {
+      const cartItem = new Cart({ product, quantity });
+      user.cart.push(cartItem);
+    }
+
+    await user.save();
 
     return res
       .status(200)
@@ -142,62 +159,169 @@ router.post("/cart", async (req, res) => {
   }
 });
 
-// Other routes...
+router.delete("/cart", async (req, res) => {
+  try {
+    const { userId, product } = req.body;
+
+    if (!userId || !product) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const existingCartItemIndex = user.cart.findIndex(
+      (item) => item.product === product
+    );
+
+    if (existingCartItemIndex !== -1) {
+      user.cart.splice(existingCartItemIndex, 1);
+    }
+
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ message: "Product deleted from cart successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/wishlist", async (req, res) => {
+  try {
+    const { userId, product } = req.body;
+
+    if (!userId || !product) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const existingWishlistItemIndex = user.wishlist.findIndex(
+      (item) => item.product === product
+    );
+
+    if (existingWishlistItemIndex !== -1) {
+      const existingWishlistItem = user.wishlist[existingWishlistItemIndex];
+      console.log("Updating existing item:", existingWishlistItem);
+
+      user.wishlist.splice(existingWishlistItemIndex, 1);
+      user.wishlist.push(existingWishlistItem);
+    } else {
+      const wishlistItem = new Wishlist({ product });
+      user.wishlist.push(wishlistItem);
+    }
+
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ message: "Product added to wishlist successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/wishlist", async (req, res) => {
+  try {
+    const { userId, product } = req.body;
+
+    if (!userId || !product) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const existingWishlistItemIndex = user.wishlist.findIndex(
+      (item) => item.product === product
+    );
+
+    if (existingWishlistItemIndex !== -1) {
+      user.wishlist.splice(existingWishlistItemIndex, 1);
+    }
+
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ message: "Product deleted from wishlist successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 // Create a nodemailer transporter using SMTP transport
 const transporter = nodemailer.createTransport({
   service: "Gmail",
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
+    user: process.env.MYEMAIL,
+    pass: process.env.PSWD,
   },
 });
 
 // Function to send OTP
-async function sendOTP(email, otp) {
-  try {
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Verification from Curelli",
-      text: `Your OTP is: ${otp}`,
-    };
+function sendOTP(email, otp) {
+  const date = new Date(); // Define date object
+  User.findOneAndUpdate(
+    { mail: req.body.mail },
+    { otp: otp },
+    { otpExpire: date.getTime() + 300000 }
+  );
+  const mailOptions = {
+    from: "ds04aranganthan@gmail.com",
+    to: email,
+    subject: "Verification from Curelli",
+    text: `Your OTP is: ${otp}`,
+  };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent: ", info.response);
-  } catch (error) {
-    console.error("Error sending email: ", error);
-  }
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log("Error sending email: ", error);
+    } else {
+      console.log("Email sent: ", info.response);
+    }
+  });
 }
 
+// Assuming you have a User model with an email field
 router.post("/sendOTP", async (req, res) => {
   try {
-    // Generate OTP
-    const otp = otpGenerator.generate(6, {
-      digits: true,
-      alphabets: false,
-      upperCase: false,
-      specialChars: false,
-    });
-
-    // Find user by email and update OTP
-    const user = await User.findOneAndUpdate(
-      { mail: req.body.mail },
-      { otp: otp },
-      { new: true }
-    );
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Send OTP
-    await sendOTP(user.mail, user.otp);
-
-    return res.json({ message: "OTP sent successfully" });
+    const otp = otpGenerator
+      .generate(6, {
+        digits: true,
+        alphabets: false,
+        upperCase: false,
+        specialChars: false,
+      })
+      .then((user) => {
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        sendOTP(user.mail, user.otp);
+        res.json({ message: "OTP sent successfully" });
+      })
+      .catch((err) => {
+        console.error("Error generating OTP: ", err);
+        res.status(500).json({ message: "Internal server error" });
+      });
   } catch (error) {
-    console.error("Error generating or sending OTP: ", error);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -205,22 +329,17 @@ router.post("/verify/:mail", async (req, res) => {
   try {
     const { otp } = req.body;
     const { mail } = req.params;
-
     const user = await User.findOne({ mail });
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    if (user.otp === otp && user.otpExpire > Date.now()) {
+    if (user && user.otp === otp && user.otpExpire > Date.now()) {
       return res
         .status(200)
         .json({ message: "OTP verification completed...!" });
     } else {
-      return res.status(400).json({ error: "Invalid OTP or OTP expired" });
+      return res.status(400).json({ error: "OTP verification failed" });
     }
   } catch (error) {
-    console.error("Error verifying OTP: ", error);
+    console.error("Error verifying OTP:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
