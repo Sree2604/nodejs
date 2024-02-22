@@ -5,6 +5,8 @@ const User = require("../models/user");
 const Cart = require("../models/cart");
 const Wishlist = require("../models/wishlist");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
+const otpGenerator = require("otp-generator");
 
 const router = express.Router();
 
@@ -80,7 +82,7 @@ router.get("/admin/:secretKey", async (req, res) => {
 router.get("/admin/verify/:token", async (req, res) => {
   try {
     const { token } = req.params;
-    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+    const decodedToken = jwt.verify(token, req.params.secretKey); // Using the secretKey from URL params
     console.log(decodedToken);
     const userId = decodedToken.userId;
 
@@ -259,6 +261,85 @@ router.delete("/wishlist", async (req, res) => {
       .json({ message: "Product deleted from wishlist successfully" });
   } catch (error) {
     console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Create a nodemailer transporter using SMTP transport
+const transporter = nodemailer.createTransport({
+  service: "Gmail",
+  auth: {
+    user: process.env.MYEMAIL,
+    pass: process.env.PSWD,
+  },
+});
+
+// Function to send OTP
+function sendOTP(email, otp) {
+  const date = new Date(); // Define date object
+  User.findOneAndUpdate(
+    { mail: req.body.mail },
+    { otp: otp },
+    { otpExpire: date.getTime() + 300000 }
+  );
+  const mailOptions = {
+    from: "ds04aranganthan@gmail.com",
+    to: email,
+    subject: "Verification from Curelli",
+    text: `Your OTP is: ${otp}`,
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log("Error sending email: ", error);
+    } else {
+      console.log("Email sent: ", info.response);
+    }
+  });
+}
+
+// Assuming you have a User model with an email field
+router.post("/sendOTP", async (req, res) => {
+  try {
+    const otp = otpGenerator
+      .generate(6, {
+        digits: true,
+        alphabets: false,
+        upperCase: false,
+        specialChars: false,
+      })
+      .then((user) => {
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        sendOTP(user.mail, user.otp);
+        res.json({ message: "OTP sent successfully" });
+      })
+      .catch((err) => {
+        console.error("Error generating OTP: ", err);
+        res.status(500).json({ message: "Internal server error" });
+      });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/verify/:mail", async (req, res) => {
+  try {
+    const { otp } = req.body;
+    const { mail } = req.params;
+    const user = await User.findOne({ mail });
+
+    if (user && user.otp === otp && user.otpExpire > Date.now()) {
+      return res
+        .status(200)
+        .json({ message: "OTP verification completed...!" });
+    } else {
+      return res.status(400).json({ error: "OTP verification failed" });
+    }
+  } catch (error) {
+    console.error("Error verifying OTP:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

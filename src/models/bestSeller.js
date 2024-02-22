@@ -6,6 +6,9 @@ const bestsellerSchema = new mongoose.Schema({
     ref: "products",
     // required: true
   },
+  tag: {
+    type: String,
+  },
 });
 
 module.exports = mongoose.model("Bestseller", bestsellerSchema);

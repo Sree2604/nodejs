@@ -182,17 +182,20 @@ router.post(
     { name: "carouselImage1", maxCount: 1 },
     { name: "carouselImage2", maxCount: 1 },
     { name: "carouselImage3", maxCount: 1 },
+    { name: "carouselImage4", maxCount: 1 },
   ]),
   async (req, res) => {
     try {
       const carouselImageName1 = req.files["carouselImage1"][0].filename;
       const carouselImageName2 = req.files["carouselImage2"][0].filename;
       const carouselImageName3 = req.files["carouselImage3"][0].filename;
+      const carouselImageName4 = req.files["carouselImage4"][0].filename;
 
       const carouselInserts = [
         { photo: carouselImageName1 },
         { photo: carouselImageName2 },
         { photo: carouselImageName3 },
+        { photo: carouselImageName4 },
       ];
 
       await Carousel.deleteMany({});
@@ -214,10 +217,13 @@ router.post(
 
 router.get("/admin/verify/:token", async (req, res) => {
   try {
-    const decoded = jwt.verify(token, secretKey);
+    const { token } = req.params; // Extract token from request parameters
+    const decoded = jwt.verify(token, process.env.SECRET_KEY); // Verify token using environment variable
     console.log(decoded); // Contains the decoded data
+    res.status(200).json(decoded); // Return decoded data
   } catch (err) {
     console.error("Token not valid");
+    res.status(401).json({ error: "Invalid token" }); // Return error response for invalid token
   }
 });
 
