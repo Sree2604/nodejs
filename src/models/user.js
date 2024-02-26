@@ -27,8 +27,8 @@ const userSchema = new Schema({
   otp: {
     type: String,
   },
-  otpExpire: {
-    type: Date,
+  otpExpiration: {
+    type: Boolean,
   },
 });
 

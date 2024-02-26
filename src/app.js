@@ -5,6 +5,7 @@ const path = require("path");
 
 const userRoutes = require("./routes/userRoutes");
 const productRoutes = require("./routes/productRoutes");
+const carouselRoutes = require("./routes/carouselRoutes");
 
 const app = express();
 
@@ -42,7 +43,12 @@ app.use((err, req, res, next) => {
 
 app.use("/users", userRoutes);
 app.use("/products", productRoutes);
+app.use("/carousel", carouselRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+app.use(
+  "/carouselImg",
+  express.static(path.join(__dirname, "../uploads/carousels"))
+);
 
 const start = async () => {
   try {
