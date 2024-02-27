@@ -1,6 +1,6 @@
 const express = require("express");
 const Products = require("../models/products");
-const Carousel = require("../models/carousel");
+const Carousel = require("../models/carousels");
 const Bestseller = require("../models/bestSeller");
 const multer = require("multer");
 const path = require("path");
@@ -107,6 +107,7 @@ router.post("/test", async (req, res) => {
     return res.status(500).send("Internal Server Error...!!");
   }
 });
+
 router.get("/", async (req, res) => {
   try {
     const products = await Products.find({});
@@ -214,6 +215,17 @@ router.post(
     }
   }
 );
+
+router.get("/carousels", async (req, res) => {
+  try {
+    const carousels = await Carousel.find({});
+    console.log(carousels);
+    // return res.status(200).json(carousel);
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).send("Internal Server Error...!!");
+  }
+});
 
 router.get("/admin/verify/:token", async (req, res) => {
   try {

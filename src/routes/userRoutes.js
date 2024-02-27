@@ -267,23 +267,16 @@ router.delete("/wishlist", async (req, res) => {
 
 // Create a nodemailer transporter using SMTP transport
 const transporter = nodemailer.createTransport({
-  service: "Gmail",
+  service: "google",
   auth: {
     user: process.env.MYEMAIL,
     pass: process.env.PSWD,
   },
 });
 
-// Function to send OTP
 function sendOTP(email, otp) {
-  const date = new Date(); // Define date object
-  User.findOneAndUpdate(
-    { mail: req.body.mail },
-    { otp: otp },
-    { otpExpire: date.getTime() + 300000 }
-  );
   const mailOptions = {
-    from: "ds04aranganthan@gmail.com",
+    from: process.env.MYEMAIL,
     to: email,
     subject: "Verification from Curelli",
     text: `Your OTP is: ${otp}`,
@@ -298,50 +291,62 @@ function sendOTP(email, otp) {
   });
 }
 
-// Assuming you have a User model with an email field
 router.post("/sendOTP", async (req, res) => {
   try {
-    const otp = otpGenerator
-      .generate(6, {
-        digits: true,
-        alphabets: false,
-        upperCase: false,
-        specialChars: false,
-      })
-      .then((user) => {
-        if (!user) {
-          return res.status(404).json({ message: "User not found" });
-        }
-        sendOTP(user.mail, user.otp);
-        res.json({ message: "OTP sent successfully" });
-      })
-      .catch((err) => {
-        console.error("Error generating OTP: ", err);
-        res.status(500).json({ message: "Internal server error" });
-      });
+    const d = new Date();
+    var expirationTime = new Date(d.getTime() + 180000);
+    expirationTime.toUTCString();
+    const otp = otpGenerator.generate(6, {
+      digits: true,
+      alphabets: false,
+      upperCase: false,
+      specialChars: false,
+    });
+    sendOTP(req.body.mail, otp);
+    res.json({ message: "OTP sent successfully", otp });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-router.post("/verify/:mail", async (req, res) => {
+router.post("/verifyOTP/:mail", async (req, res) => {
   try {
     const { otp } = req.body;
     const { mail } = req.params;
-    const user = await User.findOne({ mail });
 
-    if (user && user.otp === otp && user.otpExpire > Date.now()) {
-      return res
-        .status(200)
-        .json({ message: "OTP verification completed...!" });
-    } else {
-      return res.status(400).json({ error: "OTP verification failed" });
-    }
+    User.findOne({ mail })
+      .then((user) => {
+        if (user.otp === otp) {
+          if (user.otpExpiration === true) {
+            User.findOneAndUpdate(
+              { mail: mail },
+              { $set: { otp: "", otpExpiration: false } }
+            )
+              .then((user) => {
+                if (!user) {
+                  return res.status(404).json({ message: "User not found" });
+                }
+                res.json({ message: "OTP verification completed" });
+              })
+              .catch((err) => {
+                console.error("Error verifying OTP: ", err);
+                res.status(500).json({ message: "Internal server error" });
+              });
+          } else {
+            return res.status(301).json({ message: "Time Expired" });
+          }
+        } else {
+          return res.status(301).json({ message: "OTP doesn't match" });
+        }
+      })
+      .catch((err) => {
+        console.error("Error verifying OTP : ", err);
+        return res.status(404).json({ error: "Internal Server Error...!!" });
+      });
   } catch (error) {
-    console.error("Error verifying OTP:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    console.error(error);
+    return res.status(404).json({ message: "Internal server Error...!!" });
   }
 });
-
 module.exports = router;
