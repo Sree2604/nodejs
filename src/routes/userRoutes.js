@@ -269,14 +269,14 @@ router.delete("/wishlist", async (req, res) => {
 const transporter = nodemailer.createTransport({
   service: "google",
   auth: {
-    user: "aravindsiva2003.in@gmail.com",
+    user: process.env.MYEMAIL,
     pass: process.env.PSWD,
   },
 });
 
 function sendOTP(email, otp) {
   const mailOptions = {
-    from: "ds04aranganthan@gmail.com",
+    from: process.env.MYEMAIL,
     to: email,
     subject: "Verification from Curelli",
     text: `Your OTP is: ${otp}`,
