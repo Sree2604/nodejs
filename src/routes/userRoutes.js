@@ -267,9 +267,9 @@ router.delete("/wishlist", async (req, res) => {
 
 // Create a nodemailer transporter using SMTP transport
 const transporter = nodemailer.createTransport({
-  service: "Gmail",
+  service: "google",
   auth: {
-    user: process.env.MYEMAIL,
+    user: "aravindsiva2003.in@gmail.com",
     pass: process.env.PSWD,
   },
 });
@@ -302,21 +302,8 @@ router.post("/sendOTP", async (req, res) => {
       upperCase: false,
       specialChars: false,
     });
-    User.findOneAndUpdate(
-      { mail: req.body.mail },
-      { $set: { otp: otp, otpExpiration: true } }
-    )
-      .then((user) => {
-        if (!user) {
-          return res.status(404).json({ message: "User not found" });
-        }
-        sendOTP(user.mail, otp);
-        res.json({ message: "OTP sent successfully" });
-      })
-      .catch((err) => {
-        console.error("Error generating OTP: ", err);
-        res.status(500).json({ message: "Internal server error" });
-      });
+    sendOTP(req.body.mail, otp);
+    res.json({ message: "OTP sent successfully", otp });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal Server Error" });
