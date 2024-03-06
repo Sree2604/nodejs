@@ -24,12 +24,6 @@ const userSchema = new Schema({
   wishlist: {
     type: Array,
   },
-  otp: {
-    type: String,
-  },
-  otpExpiration: {
-    type: Boolean,
-  },
 });
 
 module.exports = mongoose.model("User", userSchema);
