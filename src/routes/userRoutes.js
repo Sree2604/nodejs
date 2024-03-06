@@ -285,14 +285,13 @@ router.delete("/wishlist", async (req, res) => {
   }
 });
 
-// Create a nodemailer transporter using SMTP transport
 const transporter = nodemailer.createTransport({
-  host: "smtp.zoho.in",
-  port: 587,
-  secure: false,
+  host: "smtp.zoho.in", // Zoho's SMTP server hostname
+  port: 587, // Port number for SMTP (587 is commonly used for secure transmission)
+  secure: false, // Indicates if the connection should use TLS (true for 465, false for 587)
   auth: {
-    user: "contact@curellifoods.com",
-    pass: "Curellifoods@2023",
+    user: "contact@curellifoods.com", // SMTP username (your email address)
+    pass: "Curellifoods@2023", // SMTP password
   },
 });
 
