@@ -288,7 +288,7 @@ router.delete("/wishlist", async (req, res) => {
 // Create a nodemailer transporter using SMTP transport
 const transporter = nodemailer.createTransport({
   host: "smtp.zoho.in",
-  port: 25,
+  port: 587,
   secure: false,
   auth: {
     user: "contact@curellifoods.com",
