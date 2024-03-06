@@ -296,7 +296,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-function sendOTP(email, otp) {
+async function sendOTP(email, otp) {
   const mailOptions = {
     from: "contact@curellifoods.com",
     to: email,
@@ -304,12 +304,28 @@ function sendOTP(email, otp) {
     text: `Your OTP is: ${otp}`,
   };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log("Error sending email: ", error);
-    } else {
-      console.log("Email sent: ", info.response);
-    }
+  await new Promise((resolve, reject) => {
+    transporter.verify(function (error, success) {
+      if (error) {
+        console.log(error);
+        reject(error);
+      } else {
+        console.log("Server is ready to take our messages");
+        resolve(success);
+      }
+    });
+  });
+
+  await new Promise((resolve, reject) => {
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.log(error);
+        reject(error);
+      } else {
+        console.log(info);
+        resolve(success);
+      }
+    });
   });
 }
 
