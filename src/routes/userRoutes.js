@@ -288,7 +288,7 @@ router.delete("/wishlist", async (req, res) => {
 // Create a nodemailer transporter using SMTP transport
 const transporter = nodemailer.createTransport({
   host: "smtp.zoho.in",
-  port: 587,
+  port: 25,
   secure: false,
   auth: {
     user: "contact@curellifoods.com",
@@ -296,7 +296,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-function sendOTP(email, otp) {
+async function sendOTP(email, otp, transporter) {
   const mailOptions = {
     from: "contact@curellifoods.com",
     to: email,
@@ -304,13 +304,34 @@ function sendOTP(email, otp) {
     text: `Your OTP is: ${otp}`,
   };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log("Error sending email: ", error);
-    } else {
-      console.log("Email sent: ", info.response);
-    }
-  });
+  try {
+    await new Promise((resolve, reject) => {
+      transporter.verify(function (error, success) {
+        if (error) {
+          console.log(error);
+          reject(error);
+        } else {
+          console.log("Server is ready to take our messages");
+          resolve(success);
+        }
+      });
+    });
+
+    await new Promise((resolve, reject) => {
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.log(error);
+          reject(error);
+        } else {
+          console.log(info);
+          resolve(info);
+        }
+      });
+    });
+  } catch (error) {
+    console.error(error);
+    throw new Error("Failed to send OTP");
+  }
 }
 
 router.post("/sendOTP", async (req, res) => {
@@ -321,7 +342,7 @@ router.post("/sendOTP", async (req, res) => {
       upperCase: false,
       specialChars: false,
     });
-    sendOTP(req.body.mail, otp);
+    await sendOTP(req.body.mail, otp, transporter); // Await sendOTP function
     res.json({ message: "OTP sent successfully", otp });
   } catch (error) {
     console.error(error);
