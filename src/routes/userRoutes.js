@@ -67,6 +67,26 @@ router.get("/:identifier", async (req, res) => {
   }
 });
 
+router.put("/changepswd/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const newPswd = req.body.newPswd;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const hashedPassword = await bcrypt.hash(newPswd, 10);
+    user.pswd = hashedPassword;
+    await user.save();
+
+    res.status(200).json({ message: "Password updated successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 router.get("/admin/:secretKey", async (req, res) => {
   try {
     const { secretKey } = req.params;
@@ -271,16 +291,16 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: process.env.EMAIL,
-    pass: process.env.PSWD,
+    user: "contact@curellifoods.com",
+    pass: "Curellifoods@2023",
   },
 });
 
 function sendOTP(email, otp) {
   const mailOptions = {
-    from: process.env.EMAIL,
+    from: "contact@curellifoods.com",
     to: email,
-    subject: "Verification from YourApp",
+    subject: "Verification from Curelli",
     text: `Your OTP is: ${otp}`,
   };
 
