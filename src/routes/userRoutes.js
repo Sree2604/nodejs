@@ -10,6 +10,34 @@ const otpGenerator = require("otp-generator");
 
 const router = express.Router();
 
+router.post("/google", async (req, res) => {
+  try {
+    const { name, mail } = req.body;
+
+    if (!name || !mail) {
+      return res.status(400).json({
+        message: "All required fields must be provided.",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash("asdf@1234", 10);
+
+    const newUser = {
+      name,
+      mail,
+      phone: "1234567890",
+      pswd: hashedPassword,
+    };
+
+    const user = await User.create(newUser);
+
+    return res.status(201).json(user);
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 router.post("/", async (req, res) => {
   try {
     const { name, mail, phone, pswd } = req.body;
