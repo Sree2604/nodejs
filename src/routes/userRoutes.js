@@ -385,7 +385,7 @@ const adminCredentials = {
   password: "$2b$10$RKxqOUK17DcEIdld3flZtutV4uOPJ6POlm8IcOz7gDCQJb.I21z.O", // Hashed password: admin@123
 };
 
-router.post("/login", async (req, res) => {
+router.post("/admin/login", async (req, res) => {
   try {
     const { username, password } = req.body;
 
