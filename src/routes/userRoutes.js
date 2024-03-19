@@ -377,4 +377,45 @@ router.post("/sendOTP", async (req, res) => {
   }
 });
 
+const secretKey = process.env.SECRET_KEY;
+
+// Mock admin credentials
+const adminCredentials = {
+  username: "admin",
+  password: "$2b$10$RKxqOUK17DcEIdld3flZtutV4uOPJ6POlm8IcOz7gDCQJb.I21z.O", // Hashed password: admin@123
+};
+
+router.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Check if username and password are provided
+    if (!username || !password) {
+      return res
+        .status(400)
+        .json({ message: "Username and password are required" });
+    }
+
+    // Check if the provided username exists and passwords match
+    if (
+      username === adminCredentials.username &&
+      (await bcrypt.compare(password, adminCredentials.password))
+    ) {
+      // Generate JWT token
+      const token = jwt.sign(
+        { username: adminCredentials.username },
+        secretKey,
+        { expiresIn: "1h" }
+      );
+
+      return res.status(200).json({ token });
+    } else {
+      return res.status(401).json({ message: "Invalid username or password" });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 module.exports = router;
