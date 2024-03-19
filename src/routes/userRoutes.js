@@ -155,10 +155,7 @@ router.get("/", async (req, res) => {
   try {
     const users = await User.find({});
 
-    return res.status(200).json({
-      count: users.length,
-      data: users,
-    });
+    return res.status(200).json(users);
   } catch (error) {
     console.error(error.message);
     return res.status(500).json({ message: error.message });
@@ -417,6 +414,30 @@ router.post("/admin/login", async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+router.put("/edit/:identifier", async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    let userId;
+    if (mongoose.Types.ObjectId.isValid(identifier)) {
+      userId = await User.findOne({ _id: identifier });
+    } else {
+      userId = await User.findOne({ mail: identifier });
+    }
+    const updatedUserData = req.body;
+
+    const user = await User.findByIdAndUpdate(userId, updatedUserData);
+
+    res.json({
+      success: true,
+      message: "User information updated successfully",
+      user,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
 
