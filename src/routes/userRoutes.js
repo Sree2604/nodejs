@@ -132,9 +132,9 @@ router.get("/admin/verify/:token", async (req, res) => {
     const { token } = req.params;
     const decodedToken = jwt.verify(token, process.env.SECRET_KEY); // Using the secretKey from environment variables
     console.log(decodedToken);
-    const userId = decodedToken.userId;
+    const userId = decodedToken.username;
 
-    if (userId == 123) {
+    if (userId == "admin") {
       console.log("User is authorized");
       return res
         .status(200)
@@ -382,13 +382,15 @@ const secretKey = process.env.SECRET_KEY;
 // Mock admin credentials
 const adminCredentials = {
   username: "admin",
-  password: "$2b$10$RKxqOUK17DcEIdld3flZtutV4uOPJ6POlm8IcOz7gDCQJb.I21z.O", // Hashed password: admin@123
+  password: "$2b$10$qqb6qhJ0fJRrvjtbYFgoruIs/JDatcamvoifU5Qn.WSUhqDF/vSMG", // Hashed password: admin@123
 };
 
 router.post("/admin/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-
+    const hashedPassword = await bcrypt.hash(password, 10);
+    console.log(hashedPassword);
+    console.log(await bcrypt.compare(password, adminCredentials.password));
     // Check if username and password are provided
     if (!username || !password) {
       return res
@@ -404,7 +406,7 @@ router.post("/admin/login", async (req, res) => {
       // Generate JWT token
       const token = jwt.sign(
         { username: adminCredentials.username },
-        secretKey,
+        process.env.SECRET_KEY,
         { expiresIn: "1h" }
       );
 
