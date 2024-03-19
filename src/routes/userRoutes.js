@@ -130,7 +130,7 @@ router.get("/admin/:secretKey", async (req, res) => {
 router.get("/admin/verify/:token", async (req, res) => {
   try {
     const { token } = req.params;
-    const decodedToken = jwt.verify(token, req.params.secretKey); // Using the secretKey from URL params
+    const decodedToken = jwt.verify(token, process.env.SECRET_KEY); // Using the secretKey from environment variables
     console.log(decodedToken);
     const userId = decodedToken.userId;
 
@@ -147,7 +147,7 @@ router.get("/admin/verify/:token", async (req, res) => {
     }
   } catch (error) {
     console.error("Token verification failed:", error);
-    return res.status(401).send({ valid: false, error: "Invalid token" });
+    return res.status(401).json({ valid: false, error: "Invalid token" });
   }
 });
 
