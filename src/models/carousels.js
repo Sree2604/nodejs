@@ -5,6 +5,10 @@ const carouselSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  mobile: {
+    type: Boolean,
+    required: true,
+  },
 });
 
 module.exports = mongoose.model("Carousel", carouselSchema);
