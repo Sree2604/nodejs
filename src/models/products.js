@@ -21,7 +21,6 @@ const productSchema = new mongoose.Schema({
   },
   categories: {
     type: Array,
-    // required : true
   },
   stock: {
     type: Boolean,
@@ -29,7 +28,6 @@ const productSchema = new mongoose.Schema({
   },
   offerPrice: {
     type: Number,
-    // required  : true
   },
 });
 

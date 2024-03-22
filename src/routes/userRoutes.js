@@ -125,7 +125,6 @@ router.get("/", async (req, res) => {
 router.post("/cart", async (req, res) => {
   try {
     const { userId, product } = req.body;
-    const quantity = 1;
     if (!userId || !product) {
       return res.status(400).json({ message: "Missing required fields" });
     }
@@ -142,11 +141,9 @@ router.post("/cart", async (req, res) => {
 
     if (existingCartItemIndex !== -1) {
       const existingCartItem = user.cart[existingCartItemIndex];
-      console.log("Updating existing item:", existingCartItem);
-      user.cart.splice(existingCartItemIndex, 1);
       user.cart.push(existingCartItem);
     } else {
-      const cartItem = new Cart({ product, quantity });
+      const cartItem = new Cart({ product });
       user.cart.push(cartItem);
     }
 

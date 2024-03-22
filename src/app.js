@@ -4,6 +4,7 @@ const cors = require("cors");
 const path = require("path");
 
 const userRoutes = require("./routes/userRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 const productRoutes = require("./routes/productRoutes");
 const bestSellerRoutes = require("./routes/bestSellerRoutes");
 const adminRoutes = require("./routes/adminRoutes");
@@ -44,6 +45,7 @@ app.use((err, req, res, next) => {
 });
 
 app.use("/users", userRoutes);
+app.use("/orders", orderRoutes);
 app.use("/products", productRoutes);
 app.use("/bestseller", bestSellerRoutes);
 app.use("/admin", adminRoutes);
