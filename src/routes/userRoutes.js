@@ -141,6 +141,8 @@ router.post("/cart", async (req, res) => {
 
     if (existingCartItemIndex !== -1) {
       const existingCartItem = user.cart[existingCartItemIndex];
+      existingCartItem.quantity += 1;
+      user.cart.splice(existingCartItemIndex, 1);
       user.cart.push(existingCartItem);
     } else {
       const cartItem = new Cart({ product });
@@ -189,6 +191,20 @@ router.delete("/cart", async (req, res) => {
     console.error(error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
+});
+
+router.put("/cart/:identifier", async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const user = await User.findById(identifier);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not Found" });
+    }
+    const emptyCart = [];
+    user.cart = emptyCart;
+    await user.save();
+  } catch (error) {}
 });
 
 router.post("/wishlist", async (req, res) => {
@@ -399,6 +415,34 @@ router.delete("/address/:identifier", async (req, res) => {
       user.address.splice(addressIndex, 1);
       await user.save();
       return res.status(200).json({ message: "Address deleted successfully" });
+    } else {
+      return res.status(404).json({ message: "Address not found" });
+    }
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+router.get("/address", async (req, res) => {
+  try {
+    const { identifier, addressId } = req.query;
+    console.log(identifier, addressId);
+
+    const user = await User.findById(identifier);
+
+    if (!user) {
+      return res.status(404).send("User Not Found");
+    }
+
+    const addressIndex = user.address.findIndex(
+      (item) => item._id.toString() === addressId
+    );
+
+    if (addressIndex !== -1) {
+      const userAddress = user.address[addressIndex];
+      console.log(userAddress);
+      return res.status(200).json(userAddress);
     } else {
       return res.status(404).json({ message: "Address not found" });
     }

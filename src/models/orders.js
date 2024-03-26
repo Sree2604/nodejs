@@ -7,7 +7,7 @@ const orderSchema = new mongoose.Schema({
     required: true,
   },
   address: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Object,
     ref: "address",
     required: true,
   },
@@ -16,7 +16,7 @@ const orderSchema = new mongoose.Schema({
     required: true,
   },
   date: {
-    type: date,
+    type: String,
     required: true,
   },
   paymentmethod: {
@@ -24,12 +24,20 @@ const orderSchema = new mongoose.Schema({
     required: true,
   },
   paymentDone: {
-    type: Boolean,
+    type: String,
     default: false,
   },
   delivered: {
     type: Boolean,
     default: false,
+  },
+  totalPrice: {
+    type: Number,
+    required: true,
+  },
+  orderStatus: {
+    type: String,
+    default: "pending",
   },
 });
 
