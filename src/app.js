@@ -4,7 +4,10 @@ const cors = require("cors");
 const path = require("path");
 
 const userRoutes = require("./routes/userRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 const productRoutes = require("./routes/productRoutes");
+const bestSellerRoutes = require("./routes/bestSellerRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 const carouselRoutes = require("./routes/carouselRoutes");
 
 const app = express();
@@ -42,7 +45,10 @@ app.use((err, req, res, next) => {
 });
 
 app.use("/users", userRoutes);
+app.use("/orders", orderRoutes);
 app.use("/products", productRoutes);
+app.use("/bestseller", bestSellerRoutes);
+app.use("/admin", adminRoutes);
 app.use("/carousel", carouselRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use(

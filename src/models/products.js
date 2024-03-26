@@ -21,19 +21,13 @@ const productSchema = new mongoose.Schema({
   },
   categories: {
     type: Array,
-    // required : true
   },
   stock: {
-    type: Number,
+    type: Boolean,
     required: true,
   },
   offerPrice: {
     type: Number,
-    // required  : true
-  },
-  bestseller: {
-    type: Boolean,
-    default: false, // Default value is false
   },
 });
 

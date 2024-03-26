@@ -4,9 +4,9 @@ const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const Cart = require("../models/cart");
 const Wishlist = require("../models/wishlist");
-const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const otpGenerator = require("otp-generator");
+const Address = require("../models/address");
 
 const router = express.Router();
 
@@ -20,13 +20,9 @@ router.post("/google", async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash("asdf@1234", 10);
-
     const newUser = {
       name,
       mail,
-      phone: "1234567890",
-      pswd: hashedPassword,
     };
 
     const user = await User.create(newUser);
@@ -115,42 +111,6 @@ router.put("/changepswd/:userId", async (req, res) => {
   }
 });
 
-router.get("/admin/:secretKey", async (req, res) => {
-  try {
-    const { secretKey } = req.params;
-    const token = jwt.sign({ userId: 123 }, secretKey, { expiresIn: "1h" });
-    console.log(token);
-    return res.status(200).send({ token: token });
-  } catch (error) {
-    console.err;
-    return res.status(500).send("Internal Eerver Error");
-  }
-});
-
-router.get("/admin/verify/:token", async (req, res) => {
-  try {
-    const { token } = req.params;
-    const decodedToken = jwt.verify(token, process.env.SECRET_KEY); // Using the secretKey from environment variables
-    console.log(decodedToken);
-    const userId = decodedToken.username;
-
-    if (userId == "admin") {
-      console.log("User is authorized");
-      return res
-        .status(200)
-        .json({ valid: true, message: "User is authorized" });
-    } else {
-      console.log("User is not authorized");
-      return res
-        .status(403)
-        .json({ valid: false, message: "User is not authorized" });
-    }
-  } catch (error) {
-    console.error("Token verification failed:", error);
-    return res.status(401).json({ valid: false, error: "Invalid token" });
-  }
-});
-
 router.get("/", async (req, res) => {
   try {
     const users = await User.find({});
@@ -164,9 +124,8 @@ router.get("/", async (req, res) => {
 
 router.post("/cart", async (req, res) => {
   try {
-    const { userId, product, quantity } = req.body;
-
-    if (!userId || !product || !quantity) {
+    const { userId, product } = req.body;
+    if (!userId || !product) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -182,14 +141,11 @@ router.post("/cart", async (req, res) => {
 
     if (existingCartItemIndex !== -1) {
       const existingCartItem = user.cart[existingCartItemIndex];
-      console.log("Updating existing item:", existingCartItem);
-
-      existingCartItem.quantity =
-        parseInt(existingCartItem.quantity) + parseInt(quantity);
+      existingCartItem.quantity += 1;
       user.cart.splice(existingCartItemIndex, 1);
       user.cart.push(existingCartItem);
     } else {
-      const cartItem = new Cart({ product, quantity });
+      const cartItem = new Cart({ product });
       user.cart.push(cartItem);
     }
 
@@ -235,6 +191,20 @@ router.delete("/cart", async (req, res) => {
     console.error(error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
+});
+
+router.put("/cart/:identifier", async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const user = await User.findById(identifier);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not Found" });
+    }
+    const emptyCart = [];
+    user.cart = emptyCart;
+    await user.save();
+  } catch (error) {}
 });
 
 router.post("/wishlist", async (req, res) => {
@@ -374,49 +344,6 @@ router.post("/sendOTP", async (req, res) => {
   }
 });
 
-const secretKey = process.env.SECRET_KEY;
-
-// Mock admin credentials
-const adminCredentials = {
-  username: "admin",
-  password: "$2b$10$qqb6qhJ0fJRrvjtbYFgoruIs/JDatcamvoifU5Qn.WSUhqDF/vSMG", // Hashed password: admin@123
-};
-
-router.post("/admin/login", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
-    console.log(hashedPassword);
-    console.log(await bcrypt.compare(password, adminCredentials.password));
-    // Check if username and password are provided
-    if (!username || !password) {
-      return res
-        .status(400)
-        .json({ message: "Username and password are required" });
-    }
-
-    // Check if the provided username exists and passwords match
-    if (
-      username === adminCredentials.username &&
-      (await bcrypt.compare(password, adminCredentials.password))
-    ) {
-      // Generate JWT token
-      const token = jwt.sign(
-        { username: adminCredentials.username },
-        process.env.SECRET_KEY,
-        { expiresIn: "1h" }
-      );
-
-      return res.status(200).json({ token });
-    } else {
-      return res.status(401).json({ message: "Invalid username or password" });
-    }
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-});
-
 router.put("/edit/:identifier", async (req, res) => {
   try {
     const { identifier } = req.params;
@@ -438,6 +365,90 @@ router.put("/edit/:identifier", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+router.post("/address/:identifier", async (req, res) => {
+  try {
+    const { identifier } = req.params;
+
+    const user = await User.findById(identifier).populate("address");
+
+    if (!user) {
+      return res.status(404).json({ message: "User Not Found" });
+    }
+
+    const address = new Address({
+      name: req.body.name,
+      address: req.body.address,
+      district: req.body.district,
+      state: req.body.state,
+      pincode: req.body.pincode,
+      addressContact: req.body.addressContact,
+    });
+
+    user.address.push(address);
+    await user.save();
+
+    return res.status(200).json({ message: "Address added successfully" });
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+router.delete("/address/:identifier", async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const { addressId } = req.body;
+    const user = await User.findById(identifier).populate("address");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const addressIndex = user.address.findIndex(
+      (item) => item._id.toString() === addressId
+    );
+
+    if (addressIndex !== -1) {
+      user.address.splice(addressIndex, 1);
+      await user.save();
+      return res.status(200).json({ message: "Address deleted successfully" });
+    } else {
+      return res.status(404).json({ message: "Address not found" });
+    }
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+router.get("/address", async (req, res) => {
+  try {
+    const { identifier, addressId } = req.query;
+    console.log(identifier, addressId);
+
+    const user = await User.findById(identifier);
+
+    if (!user) {
+      return res.status(404).send("User Not Found");
+    }
+
+    const addressIndex = user.address.findIndex(
+      (item) => item._id.toString() === addressId
+    );
+
+    if (addressIndex !== -1) {
+      const userAddress = user.address[addressIndex];
+      console.log(userAddress);
+      return res.status(200).json(userAddress);
+    } else {
+      return res.status(404).json({ message: "Address not found" });
+    }
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
